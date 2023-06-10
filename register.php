@@ -1,10 +1,17 @@
 <?php
 require_once "config.php"; 
-require_once "sesiones.php"; 
+require_once "session.php"; 
 $error = '';
 $success = '';
 $result = false;
+if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            // Token CSRF inválido, manejar el error o redireccionar a una página de error.
+            exit("Error de seguridad: token CSRF inválido.");
+        }
     $fullname = trim($_POST['name']);
     $email = trim($_POST['email']); 
     $password = trim($_POST['password']); 
