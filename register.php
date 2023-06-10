@@ -102,6 +102,7 @@ background: linear-gradient(to right, rgba(132, 250, 176, 1), rgba(143, 211, 244
             <div class="card-body p-5">
               <h2 class="text-uppercase text-center mb-5">Crea tu cuenta</h2>
               <form method="post" action="">
+                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <div class="form-outline mb-4">
                   <input type="text" id="form3Example1c" class="form-control form-control-lg" name="name" required/>
                   <label class="form-label" for="form3Example1cg">Nombre completo</label>
