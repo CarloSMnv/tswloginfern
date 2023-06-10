@@ -1,23 +1,32 @@
 <?php
     require_once "config.php"; 
-    require_once "sesiones.php";
+    require_once "session.php";
     require_once "logs.php";
     $error='';
     $disable_login_button = false;
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
+        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            // Token CSRF inválido, manejar el error o redireccionar a una página de error.
+            exit("Error de seguridad: token CSRF inválido.");
+        }
         $email = trim($_POST['email']); 
         $password = trim($_POST['password']);
         $ip = $_SERVER['REMOTE_ADDR'];
         $failed_attempts = get_failed_login_attempts($ip, 1); // Verificar los intentos fallidos en las últimas 1 hora
+
         // Verificar si ha pasado el tiempo necesario desde el último intento fallido
         $time_limit = date('Y-m-d H:i:s', strtotime("-1 minute")); // Intervalo de 1 hora
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM logs WHERE estado = 0 AND ip = ? AND fecha_hora >= ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM login_logs WHERE estado = 0 AND ip = ? AND fecha_hora >= ?");
         $stmt->execute([$ip, $time_limit]);
         $attempts_within_time_limit = $stmt->fetchColumn();
         $max_attempts = 2; // Número máximo de intentos fallidos permitidos
+
         if ($attempts_within_time_limit === 0 && $failed_attempts >= $max_attempts) {
             // Restablecer contador de intentos fallidos para la dirección IP actual
-            $stmt = $pdo->prepare("DELETE FROM logs WHERE estado = 0 AND ip = ?");
+            $stmt = $pdo->prepare("DELETE FROM login_logs WHERE estado = 0 AND ip = ?");
             $stmt->execute([$ip]);
             // Restablecer el contador a 0
             $failed_attempts = 0;
@@ -37,7 +46,7 @@
     if (empty($error)) {
         // Verificar el reCAPTCHA
         $captcha_response = $_POST['g-recaptcha-response'];
-        $secret_key = "6LfPnBUmAAAAALuoBJlghT0K3Rk1vtk2Qiq704zk"; // Reemplazar con su clave secreta de reCAPTCHA
+        $secret_key = '6LfPnBUmAAAAALuoBJlghT0K3Rk1vtk2Qiq704zk'; // Reemplazar con su clave secreta de reCAPTCHA
         $verify_response = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $secret_key . '&response=' . $captcha_response);
         $response_data = json_decode($verify_response);
         if ($response_data->success) {
@@ -213,6 +222,7 @@
     </div> 
 <main class="form-signin w-100 m-auto ">
   <form class="" method="post" action="">
+    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
     <img class="mb-4" src="bootstrap-fill.svg" alt="" width="72" height="57">
     <h1 class="h3 mb-3 fw-normal">Inicia sesión</h1>
 
