@@ -35,7 +35,7 @@ function get_descriptive_os_name($os_info) {
     $log = "$estado|$fecha_hora|$email|$ip|$navegador|$sistema_operativo|$validation\n";
     
     // Insertar registro en la base de datos
-    $stmt = $pdo->prepare("INSERT INTO logs (estado, fecha_hora, email, ip, navegador, sistema_operativo, validation) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO login_logs (estado, fecha_hora, email, ip, navegador, sistema_operativo, validation) VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([$estado, $fecha_hora, $email, $ip, $navegador, $sistema_operativo, $validation]);
     
     // Escribir registro en archivo log.txt
@@ -46,10 +46,11 @@ function get_failed_login_attempts($ip, $hours) {
     $zona_horaria = 'America/Mexico_City'; // Establecer la zona horaria deseada
     date_default_timezone_set($zona_horaria); // Establecer la zona horaria en el script
     $time_limit = date('Y-m-d H:i:s', strtotime("-$hours hour"));
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM logs WHERE estado = 0 AND ip = ? AND fecha_hora >= ?");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM login_logs WHERE estado = 0 AND ip = ? AND fecha_hora >= ?");
     $stmt->execute([$ip, $time_limit]);
     
     return $stmt->fetchColumn();
 }
+
 
 ?>
